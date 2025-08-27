@@ -242,6 +242,7 @@ export default {
       if (this.virtualScroll) {
         this.virtualScroll.setScrollPosition(scrollTop, scrollLeft)
       }
+      this.render()
     },
 
     onClick(event: MouseEvent) {

@@ -1,10 +1,12 @@
 <template>
   <div class="custom-scrollbar" :class="{ horizontal: isHorizontal, vertical: !isHorizontal }">
+    <!-- 滑轨 -->
     <div
       class="scrollbar-track"
       @mousedown="onTrackMouseDown"
       ref="track"
     >
+    <!-- 滑块 -->
       <div
         class="scrollbar-thumb"
         :style="thumbStyle"
@@ -49,21 +51,34 @@ export default {
   },
   computed: {
     thumbStyle() {
+
+      // ============ 计算滚动条滑块高度 ================
+      // 视口高度占总高度的比例
       const ratio = this.viewportSize / this.contentSize
+      // 滑块高度（最小20px）
       const thumbLength = Math.max(20, this.viewportSize * ratio)
+      // 滑块最大可移动位置（视口高度 - 滑块高度），防止滚出内容区域   => 实际高度
       const maxThumbPosition = this.viewportSize - thumbLength
-      const thumbPosition = (this.scrollPosition / (this.contentSize - this.viewportSize)) * maxThumbPosition
+      
+      // ============ 根据可视区域，计算滚动条滑块位置 ============
+      // 防止除零错误，当contentSize <= viewportSize时，滚动条应该在顶部/左侧  => 理论可滚动范围
+      const scrollableSize = this.contentSize - this.viewportSize
+      // 滚动进度百分比（位置百分比） = this.scrollPosition / scrollableSize (可滚动大小)
+      // 滑块位置 = 滚动进度百分比 * 最大可移动位置
+      const thumbPosition = scrollableSize > 0 
+        ? (this.scrollPosition / scrollableSize) * maxThumbPosition 
+        : 0
 
       if (this.isHorizontal) {
         return {
           width: `${thumbLength}px`,
-          left: `${thumbPosition}px`,
+          left: `${Math.max(0, thumbPosition)}px`,
           height: `${this.thumbSize}px`
         }
       } else {
         return {
           height: `${thumbLength}px`,
-          top: `${thumbPosition}px`,
+          top: `${Math.max(0, thumbPosition)}px`,
           width: `${this.thumbSize}px`
         }
       }
@@ -92,6 +107,7 @@ export default {
       if (event.target === this.$refs.thumb) return
 
       const trackRect = (this.$refs.track as HTMLElement).getBoundingClientRect()
+      // 点击位置，相对滑轨的位置
       const clickPosition = this.isHorizontal 
         ? event.clientX - trackRect.left 
         : event.clientY - trackRect.top
@@ -101,11 +117,13 @@ export default {
         ? thumbRect.width / 2 
         : thumbRect.height / 2
 
+      // 减去滑块中心位置
       const newThumbPosition = clickPosition - thumbCenter
       const maxThumbPosition = (this.isHorizontal ? trackRect.width : trackRect.height) - 
                                (this.isHorizontal ? thumbRect.width : thumbRect.height)
-      
+      // 滑块位置在滑块可移动范围(滑轨宽度 - 滑块宽度)的位置比例
       const ratio = newThumbPosition / maxThumbPosition
+      // 换算为实际的滚动距离，  滚动距离 = 比例 × 内容可滚动范围
       const newScrollPosition = ratio * (this.contentSize - this.viewportSize)
       
       this.emitScroll(Math.max(0, Math.min(newScrollPosition, this.contentSize - this.viewportSize)))

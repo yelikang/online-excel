@@ -24,8 +24,8 @@ export default new Vuex.Store<RootState>({
     worksheets: [
       {
         name: 'Sheet1',
-        rows: 1000000,
-        cols: 16384,
+        rows: 100,
+        cols: 100,
         cells: {}
       }
     ],
